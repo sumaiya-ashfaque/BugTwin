@@ -1,0 +1,12 @@
+# CI dependencies only. Colab installs its own runtime dependencies from BugTwin.ipynb.
+nbclient>=0.10,<1
+nbformat>=5.9,<6
+ipykernel>=6,<8
+pytest>=8,<10
+pandas>=2.2,<3
+numpy>=1.26,<3
+requests>=2.31,<3
+matplotlib>=3.8,<4
+scikit-learn>=1.4,<2
+scipy>=1.12,<2
+gradio>=5,<7

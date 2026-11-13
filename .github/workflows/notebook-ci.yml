@@ -1,0 +1,35 @@
+name: Notebook CI
+
+on:
+  push:
+    branches: [main, 'feature/**', 'fix/**']
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  fixture-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-ci.txt
+      - name: Execute notebook with synthetic fixtures
+        env:
+          BUGTWIN_M1_SOURCE: fixture
+          BUGTWIN_SKIP_INSTALL: '1'
+          BUGTWIN_LAUNCH_UI: '0'
+          BUGTWIN_MAX_REPORTS: '12000'
+        run: |
+          python - <<'PY'
+          from nbclient import NotebookClient
+          import nbformat
+          notebook = nbformat.read('BugTwin.ipynb', as_version=4)
+          NotebookClient(notebook, timeout=180, kernel_name='python3', allow_errors=False).execute()
+          print('Notebook fixture regression suite passed')
+          PY

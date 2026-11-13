@@ -1,0 +1,28 @@
+# Python and notebooks
+__pycache__/
+.ipynb_checkpoints/
+.pytest_cache/
+.venv/
+.ruff_cache/
+.env
+.env.*
+!.env.example
+*.pyc
+
+# Generated datasets, indexes and notebook runs
+bugtwin_runtime/
+data/raw/
+data/normalized/
+reports/
+models/
+outputs/
+*.executed.ipynb
+notebook_run.ipynb
+
+# Credentials and large binary artifacts
+*.pem
+*.key
+*.pkl
+*.joblib
+*.faiss
+.DS_Store
