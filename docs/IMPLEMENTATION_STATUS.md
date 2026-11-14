@@ -13,8 +13,14 @@
 - Synthetic fixture execution verifies notebook control flow and retrieval contracts, but is not a real-dataset benchmark.
 - Real GitHub BugHub source parsing and observed retrieval metrics must be verified in Colab before scientific claims.
 - Indexing the earliest 12,000 reports is a limited, time-preserving benchmark cohort, not the full historical index.
-- This is an initial working lexical search release. Neural embeddings, reranking, user-uploaded corpus indexing, and production-level explanations are not yet implemented.
+- The initial lexical release is preserved. M3 adds pretrained neural embeddings and optional reranking; user-uploaded corpus indexing and production-level explanations remain out of scope.
 
 ## Next engineering checkpoint
 
-Confirm real-source data audit, inspect historical query counts and measured baseline metrics, then implement MiniLM/FAISS and compare it on an identical evaluation population.
+Confirm real-source data audit and run the pretrained-model benchmark in Colab before making performance claims.
+
+
+## M3 — Semantic and hybrid retrieval
+
+- Implemented: MiniLM encoder adapter, cached normalized embeddings, FAISS exact index / eligible-first cosine retrieval, BM25 + MiniLM reciprocal rank fusion, optional cross-encoder, comparative evaluation, UI selection, and twelve additional regression tests.
+- Verification: synthetic-fixture execution is automated through the existing GitHub Actions notebook workflow. Real pretrained weights, FAISS availability, and real BugHub data must be verified in Colab before claiming real NLP benchmarks.

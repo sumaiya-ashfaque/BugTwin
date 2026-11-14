@@ -9,7 +9,7 @@ Semantic duplicate bug-report search, reproducible historical data auditing, and
 - Provenance-aware ingestion of the public Eclipse Platform bug-report corpus from [LogPAI BugHub](https://github.com/logpai/bughub).
 - Canonical issue records, duplicate-link audits, timestamp checks, and quarantining of invalid rows.
 - Chronologically safe dataset partitions and verified direct-duplicate evaluation queries.
-- TF-IDF and BM25 historical candidate retrieval with fixed training-derived corpus statistics.
+- TF-IDF, BM25, MiniLM semantic retrieval, and RRF hybrid search historical candidate retrieval with fixed training-derived corpus statistics.
 - Gradio interface for searching existing reports, plus baseline evaluation summaries.
 - Automated regression tests embedded in the notebook and executed in CI using synthetic fixtures.
 
@@ -54,3 +54,12 @@ See [docs/GITHUB_WORKFLOW.md](docs/GITHUB_WORKFLOW.md) for branch, commit, push,
 - [Architecture and stakeholder maps](docs/BT-ARCH-001.md)
 - [M1 verification report](docs/M1-verification.md)
 - [Implementation checkpoint](docs/IMPLEMENTATION_STATUS.md)
+
+
+## M3 semantic retrieval
+
+The notebook now supports TF-IDF, BM25, pretrained MiniLM embeddings, exact cosine search with FAISS acceleration for unrestricted queries, BM25 + dense RRF fusion, and optional neural reranking. All application logic remains in `BugTwin.ipynb`. In Colab, `Runtime → Run all` installs the model dependencies and downloads `sentence-transformers/all-MiniLM-L6-v2`. The first model-based run can require additional time.
+
+For the no-network fixture CI harness, `BUGTWIN_M1_SOURCE=fixture` activates an explicitly synthetic hashing encoder. Fixture scores are **not** language-model benchmarks. `BUGTWIN_ENABLE_RERANKER=1` enables the optional pretrained cross-encoder in real-model mode. Real-source ingestion has not yet been validated in this delivery environment.
+
+The full comparison is written to `bugtwin_runtime/reports/m3/`, including per-query metrics, method summaries, test output and a run manifest. If the neural model is unavailable, BM25/TF-IDF remain usable and the interface indicates the limitation.
