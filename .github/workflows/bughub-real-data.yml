@@ -1,6 +1,11 @@
 name: BugHub real-data smoke test
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'BugTwin.ipynb'
+      - '.github/workflows/bughub-real-data.yml'
   pull_request:
     branches: [main]
     paths:
@@ -37,6 +42,29 @@ jobs:
           NotebookClient(notebook, timeout=1200, kernel_name='python3', allow_errors=False).execute()
           print('Full notebook executed against real Eclipse data (lexical-only smoke profile).')
           PY
+      - name: Check sampled retrieval coverage
+        run: |
+          python - <<'PY_CHECK'
+          from pathlib import Path
+          import json
+          import pandas as pd
+
+          root = Path('bugtwin_runtime/reports/lexical')
+          profile = json.loads((root / 'corpus_sampling.json').read_text(encoding='utf-8'))
+          print('Source creation dates:', profile['source_unique_creation_dates'])
+          print('Sample creation dates:', profile['sample_unique_creation_dates'])
+          print('Sampled split sizes:', profile['split_counts'])
+          assert profile['sample_unique_creation_dates'] >= 3, 'Sampling failed to cover all chronological periods'
+          assert set(profile['split_counts']) == {'train', 'validation', 'test'}
+
+          summary = pd.read_csv(root / 'summary.csv')
+          print('Lexical evaluation rows:', len(summary))
+          if summary.empty:
+              raise AssertionError('No historically eligible positive queries were evaluated in the sampled corpus')
+          assert {'validation', 'test'}.issubset(set(summary['split'])), (
+              'Validation and test phases must have eligible linked queries in the smoke corpus'
+          )
+          PY_CHECK
       - name: Check real-source integrity manifest
         run: |
           python - <<'PY'
