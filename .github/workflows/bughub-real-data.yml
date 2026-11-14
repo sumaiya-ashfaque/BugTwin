@@ -1,0 +1,64 @@
+name: BugHub real-data smoke test
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'BugTwin.ipynb'
+      - '.github/workflows/bughub-real-data.yml'
+  workflow_dispatch:
+
+jobs:
+  eclipse-ingestion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: requirements-ci.txt
+      - name: Install notebook validation dependencies
+        run: python -m pip install -r requirements-ci.txt
+      - name: Execute notebook using actual Eclipse dataset
+        env:
+          BUGTWIN_M1_SOURCE: bughub
+          BUGTWIN_ENCODER_MODE: 'off'
+          BUGTWIN_SKIP_INSTALL: '1'
+          BUGTWIN_LAUNCH_UI: '0'
+          BUGTWIN_MAX_REPORTS: '1500'
+          BUGTWIN_EVAL_QUERIES: '6'
+        run: |
+          python - <<'PY'
+          from nbclient import NotebookClient
+          import nbformat
+          notebook = nbformat.read('BugTwin.ipynb', as_version=4)
+          NotebookClient(notebook, timeout=1200, kernel_name='python3', allow_errors=False).execute()
+          print('Full notebook executed against real Eclipse data (lexical-only smoke profile).')
+          PY
+      - name: Check real-source integrity manifest
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          path = Path('bugtwin_runtime/reports/m1/m1_manifest.json')
+          data = json.loads(path.read_text(encoding='utf-8'))
+          print('Source mode:', data['source_mode'])
+          print('Canonical reports:', data['dataset']['report_count'])
+          print('Eligible positive queries:', data['dataset']['eligible_direct_positive_queries'])
+          print('Real-source benchmark ready:', data['benchmark_ready'])
+          assert data['source_mode'] == 'bughub'
+          assert data['benchmark_ready'], 'Real-source acceptance conditions failed'
+          assert all(data['integrity_gates'].values()), 'Dataset integrity gate failed'
+          PY
+      - name: Upload ingestion audit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bughub-real-ingestion-audit
+          path: |
+            bugtwin_runtime/reports/m1/
+            bugtwin_runtime/reports/lexical/summary.csv
+          if-no-files-found: ignore
+          retention-days: 7
