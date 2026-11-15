@@ -1,65 +1,24 @@
 # BugTwin
 
-Semantic duplicate bug-report search, reproducible historical data auditing, and baseline NLP retrieval in a single Colab notebook.
-
-**Application code:** [`BugTwin.ipynb`](BugTwin.ipynb) — the repository's only application source file.
-
-## Capabilities
-
-- Provenance-aware ingestion of the public Eclipse Platform bug-report corpus from [LogPAI BugHub](https://github.com/logpai/bughub).
-- Canonical issue records, duplicate-link audits, timestamp checks, and quarantining of invalid rows.
-- Chronologically safe dataset partitions and verified direct-duplicate evaluation queries.
-- TF-IDF, BM25, MiniLM semantic retrieval, and RRF hybrid search historical candidate retrieval with fixed training-derived corpus statistics.
-- Gradio interface for searching existing reports, plus baseline evaluation summaries.
-- Automated regression tests embedded in the notebook and executed in CI using synthetic fixtures.
+A compact single-notebook NLP project for finding potentially duplicated software bug reports.
 
 ## Run in Google Colab
 
-1. Open `BugTwin.ipynb` in [Google Colab](https://colab.research.google.com/).
-2. Select **Runtime → Run all**. The notebook installs the runtime dependencies itself.
-3. The default source mode is `bughub`; ingestion requires internet access and a successful source-schema audit.
-4. Review the source manifest and data quality gates. Then use the UI at the end of the notebook.
-5. In Colab, a public Gradio share link is enabled by default **only for the public BugHub dataset or the built-in synthetic fixture**. Anyone with that URL may access the application while it runs. Set `BUGTWIN_SHARE_UI=0` if you do not want a public link; note that a local-only interface may not open in Colab. Local source mode never enables public sharing by default.
+Open `BugTwin.ipynb` and choose **Runtime → Run all**. The notebook installs Gradio and SentenceTransformers, loads 30 built-in fictional issue reports, compares TF-IDF and MiniLM, and launches a search interface. A Google Colab internet connection is needed the first time MiniLM is downloaded. No API key required.
 
-The default benchmark selects up to the earliest 12,000 source reports to keep CPU/RAM costs manageable. The M2 benchmark uses its own chronological split and frozen training vocabulary. These results are **not** full-corpus BugHub benchmark scores. Increase the limit only after verifying available memory and processing time.
+## What it demonstrates
 
-## Offline / CI fixture mode
+- TF-IDF + cosine similarity: traditional lexical retrieval.
+- SentenceTransformer MiniLM + cosine similarity: semantic retrieval.
+- Top-5 ranked matches and six illustrative Hit@3 evaluation queries.
+- Gradio input form and results table.
 
-```powershell
-$env:BUGTWIN_M1_SOURCE = 'fixture'
-$env:BUGTWIN_SKIP_INSTALL = '1'
-$env:BUGTWIN_LAUNCH_UI = '0'
-python -m pip install -r requirements-ci.txt
-python -c "import nbformat; from nbclient import NotebookClient; n=nbformat.read('BugTwin.ipynb',as_version=4); NotebookClient(n,timeout=180,kernel_name='python3').execute(); print('PASS')"
-```
+**Limitations:** The embedded corpus and labeled examples are handcrafted demonstration data, not an external validation benchmark. Similarity is not a calibrated duplicate probability. This project offers human-review candidates, not automatic closure of bug tickets.
 
-Fixture data tests the implementation, not the quality of a model on real bug reports. Do not report fixture metrics as scientific results.
+## Source and application structure
 
-## Reproducibility and licensing
+All executable application logic is in `BugTwin.ipynb`. The `.github` workflow runs a minimal offline TF-IDF smoke check without downloading MiniLM. Actual transformer inference must be verified in Colab.
 
-- The public data is downloaded on demand and is **not committed** to this repository.
-- Confirm the original source's research-use terms before using or redistributing results or source records.
-- The M1 manifest records the pinned Git commit and SHA-256 hashes of downloaded artifacts.
-- Queries with no verified direct historical duplicate link are classified as **unknown**, not negatives.
-- Original issue resolution metadata is excluded from ranking features.
-- Neural embeddings, hybrid retrieval and reranking are subsequent milestones; this repository currently implements lexical baselines.
+## Use with your own data
 
-## Development and GitHub workflow
-
-See [docs/GITHUB_WORKFLOW.md](docs/GITHUB_WORKFLOW.md) for branch, commit, push, pull request and merge instructions.
-
-## Documentation
-
-- [Master specification](docs/BT-SPEC-001.md)
-- [Architecture and stakeholder maps](docs/BT-ARCH-001.md)
-- [M1 verification report](docs/M1-verification.md)
-- [Implementation checkpoint](docs/IMPLEMENTATION_STATUS.md)
-
-
-## M3 semantic retrieval
-
-The notebook now supports TF-IDF, BM25, pretrained MiniLM embeddings, exact cosine search with FAISS acceleration for unrestricted queries, BM25 + dense RRF fusion, and optional neural reranking. All application logic remains in `BugTwin.ipynb`. In Colab, `Runtime → Run all` installs the model dependencies and downloads `sentence-transformers/all-MiniLM-L6-v2`. The first model-based run can require additional time.
-
-For the no-network fixture CI harness, `BUGTWIN_M1_SOURCE=fixture` activates an explicitly synthetic hashing encoder. Fixture scores are **not** language-model benchmarks. `BUGTWIN_ENABLE_RERANKER=1` enables the optional pretrained cross-encoder in real-model mode. Real-source ingestion has not yet been validated in this delivery environment.
-
-The full comparison is written to `bugtwin_runtime/reports/m3/`, including per-query metrics, method summaries, test output and a run manifest. If the neural model is unavailable, BM25/TF-IDF remain usable and the interface indicates the limitation.
+Replace the `reports` DataFrame in the dataset cell with a CSV having `id`, `title`, and `description` columns, then rerun all cells. Avoid sensitive reports if using the public Gradio share link.
